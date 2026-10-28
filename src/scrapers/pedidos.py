@@ -19,14 +19,20 @@ def extrair_pagina_atual(page: Page) -> list[dict]:
     frame.locator(SELETOR_TABELA_PEDIDOS).wait_for(state="visible")
 
     pedidos = []
-    #linhas = frame.locator(f"{SELETOR_TABELA_PEDIDOS} tbody tr.wmw-grid-tr")
-    linhas = frame.locator('//*[@id="formContent:pedidoTableTable"]//tr[starts-with(@class, "wmw-grid-tr")]')
+    linhas = frame.locator(f"{SELETOR_TABELA_PEDIDOS} tbody tr.wmw-grid-tr")
+    linhas.first.wait_for(state="visible", timeout=15_000)
+    #linhas = frame.locator('//*[@id="formContent:pedidoTableTable"]//tr[contains(@class, "wmw-grid-tr")]')
     total = linhas.count()
 
     for i in range(total):
-        celulas = linhas.nth(i).locator("td")
+        linha = linhas.nth(i)
+        celulas = linha.locator("td")
+
+        # Pega o link editLink dentro da linha e extrai o ID real do DOM
+        link_edicao = linha.locator("a[id$=':editLink']").first
+        id_edit_link = link_edicao.get_attribute("id")  # ex: "formContent:pedidoTable:18:editLink"
         pedido = {
-            "indice_linha": i,
+            "id_edit_link": id_edit_link,   
             "numero_pedido": celulas.nth(1).inner_text().strip(),
             "cod_cliente": celulas.nth(2).inner_text().strip(),
             "razao_social": celulas.nth(3).inner_text().strip(),
@@ -60,3 +66,13 @@ def avancar_pagina(page: Page) -> None:
     frame.locator(SELETOR_PAGINA_ATIVA).filter(
         has_not_text=pagina_antes
     ).wait_for(state="visible", timeout=10_000)
+    
+def ir_para_pagina_pedidos(page: Page, numero_pagina: int) -> None:
+    """Pula direto para uma página específica da lista de pedidos."""
+    frame = _get_frame(page)
+    combo = frame.locator("[id='formContent:pedidoTablePagerCombo']")
+    combo.select_option(str(numero_pagina))
+    # Espera a página ativa mudar
+    frame.locator("[id='formContent:pedidoTablePager'] .wmw-gp-activep").filter(
+        has_text=str(numero_pagina)
+    ).wait_for(state="visible", timeout=15_000)
