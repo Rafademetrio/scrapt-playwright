@@ -1,0 +1,9 @@
+#arquivosn de estado de autenticação (contém dados sensíveis)
+auth_state.json
+
+
+__pycache__/
+*.pyc
+
+# Arquivos de progresso 
+progresso.json
