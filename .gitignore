@@ -4,6 +4,7 @@ auth_state.json
 
 __pycache__/
 *.pyc
+*.pyo
 
 # Arquivos de progresso 
 progresso.json
