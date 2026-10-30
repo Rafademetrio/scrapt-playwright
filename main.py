@@ -4,6 +4,7 @@ from playwright.sync_api import sync_playwright
 
 from src.config import AUTH_STATE, URL_MENU
 from src.navegacao import ir_para_pedidos_com_data
+from login import fazer_login_automatico, fazer_login_manual
 from src.progresso import (
     carregar_progresso,
     salvar_progresso,
@@ -28,14 +29,6 @@ def sessao_valida(page) -> bool:
     page.goto(URL_MENU)
     return "login" not in page.url.lower() and page.locator("#options").count() > 0
 
-
-def fazer_login(page) -> None:
-    """Espera o usuário logar manualmente."""
-    if "login" not in page.url.lower():
-        page.goto(URL_MENU)
-    print("Sessão expirada. Faça o login manualmente no navegador.")
-    print("Quando estiver logado, pressione ENTER aqui.")
-    input()
 
 
 def processar_pedido(page, pedido: dict) -> None:
@@ -78,9 +71,20 @@ def main():
         page = context.new_page()
 
         if not sessao_valida(page):
-            fazer_login(page)
+            print("Sessão inválida ou inexistente. Tentando login automático...")
+            
+            try:
+                fazer_login_automatico(page)
+                print("Login automático bem-sucedido.")
+            except Exception as e:
+                print(f"⚠️  Login automático falhou: {e}")
+                print("Caindo para o login manual...")
+                fazer_login_manual(page)
+            
             context.storage_state(path=AUTH_STATE)
             print(f"Sessão renovada em {AUTH_STATE}")
+        else:
+            print("Sessão reaproveitada do auth_state.json.")
 
         # Navega para a tela de pedidos com filtro de janeiro/2026
         ir_para_pedidos_com_data(page, mes=1, ano=2026)

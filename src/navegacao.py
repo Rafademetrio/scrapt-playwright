@@ -13,9 +13,11 @@ def ir_para_pedidos_com_data(page: Page, mes: int, ano: int, status: str = "5") 
         ano: ano de emissão (ex: 2026)
         status: código do status. "5" = Faturado (padrão), "" = todos
     """
-    # 1. Navega até a tela
-    page.get_by_role("link", name="Pedidos").first.hover()
-    page.get_by_role("menuitem", name="Pedidos", exact=True).get_by_role("link").click()
+    menu_principal = page.get_by_role("link", name="Pedidos").first
+    menu_principal.hover()
+    submenu_pedidos = page.get_by_role("menuitem", name="Pedidos", exact=True).get_by_role("link")
+    submenu_pedidos.wait_for(state="visible", timeout=5000)
+    submenu_pedidos.click()
 
     frame = page.locator("#contentFrame").content_frame
 

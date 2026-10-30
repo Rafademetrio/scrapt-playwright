@@ -25,25 +25,36 @@ def abrir_pedido(page: Page, id_edit_link: str) -> None:
     Lida com a tela preliminar que só aparece no primeiro pedido da sessão.
     """
     frame = _get_frame(page)
-
-    # 1. Clica no link usando o ID completo capturado na extração
     frame.locator(f"[id='{id_edit_link}']").click()
 
-    # 2. Espera algo aparecer. Pode ser tela preliminar OU tela de itens direto.
-    #    Estratégia: espera um dos dois aparecerem.
     try:
-        frame.locator(SELETOR_BOTAO_PRELIMINAR).wait_for(state="visible", timeout=8_000)
+        botao_preliminar = frame.locator(SELETOR_BOTAO_PRELIMINAR)
+        botao_preliminar.wait_for(state="visible", timeout=8_000)
         print("  Tela preliminar detectada, clicando em 'Consultar Item'...")
-        frame.locator(SELETOR_BOTAO_PRELIMINAR).click()
+        
+        botao_preliminar.click(force=True)
+        
+        page.wait_for_timeout(1000) 
+        
+        if botao_preliminar.is_visible():
+            botao_preliminar.press("Enter")
+            page.wait_for_timeout(1000)
+
     except Exception:
         # Não apareceu tela preliminar — foi direto para a lista de itens
         pass
 
-    # 3. Espera a lista de itens aparecer (a primeira linha da tabela)
-    frame.locator(SELETOR_LINHAS_ITENS).first.wait_for(
-        state="attached", timeout=15_000
-    )
-
+    try:
+        frame.locator(SELETOR_LINHAS_ITENS).first.wait_for(
+            state="attached", timeout=15_000
+        )
+    except Exception as e:
+        print(f"  AVISO: Não conseguiu carregar a tabela de itens após a preliminar. Erro: {e}")
+        if frame.locator(SELETOR_BOTAO_PRELIMINAR).is_visible():
+            frame.locator(SELETOR_BOTAO_PRELIMINAR).click(force=True)
+            frame.locator(SELETOR_LINHAS_ITENS).first.wait_for(
+                state="attached", timeout=15_000
+            )
 
 def extrair_pagina_itens(page: Page) -> list[dict]:
     """Extrai todos os itens visíveis na página atual da tabela."""
